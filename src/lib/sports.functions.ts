@@ -105,7 +105,7 @@ function shiftDays(ymdStr: string, days: number) {
 function prettyDate(s: string) {
   if (s.length !== 8) return s;
   const d = new Date(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T12:00:00Z`);
-  return d.toLocaleDateString("en-US", {
+  return d.toLocaleDateString("nl-NL", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -156,7 +156,7 @@ async function dayScoreboard(l: LeagueId, slate: string): Promise<Scoreboard> {
     mode: "day",
     slate: date,
     title: prettyDate(date),
-    subtitle: "Game day",
+    subtitle: "Speeldag",
     prev: shiftDays(date, -1),
     next: shiftDays(date, 1),
     games,
@@ -482,6 +482,8 @@ export const getPlayerStats = createServerFn({ method: "GET" })
         teamId: athlete.team?.id ? String(athlete.team.id) : null,
         teamName: athlete.team?.displayName ?? null,
         teamLogo: athlete.team?.logos?.[0]?.href ?? null,
+        teamColor: (athlete.team?.color as string | undefined) ?? null,
+        teamAltColor: (athlete.team?.alternateColor as string | undefined) ?? null,
       },
       seasonLabel: latest?.season ?? null,
       highlightTitle: primary?.name ?? "Season",

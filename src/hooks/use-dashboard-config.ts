@@ -3,10 +3,10 @@ import { useCallback, useEffect, useState } from "react";
 export type WidgetId = "players" | "teams" | "upcoming" | "scores";
 
 export const WIDGETS: Record<WidgetId, { label: string; hint: string }> = {
-  players: { label: "Player spotlight", hint: "Photos, latest numbers and career trend" },
-  teams: { label: "Team form", hint: "Record, last 5 results and latest game" },
-  upcoming: { label: "Up next", hint: "Next games for the teams you follow" },
-  scores: { label: "Latest scores", hint: "The most recent league slate" },
+  players: { label: "Spelers in de spotlight", hint: "Foto's, laatste cijfers en carrièretrend" },
+  teams: { label: "Teamvorm", hint: "Record, laatste 5 uitslagen en laatste wedstrijd" },
+  upcoming: { label: "Hierna", hint: "Volgende wedstrijden van je teams" },
+  scores: { label: "Laatste uitslagen", hint: "De meest recente speelronde" },
 };
 
 export type DashboardConfig = {

@@ -8,8 +8,8 @@ import { LEAGUES, type LeagueId } from "@/lib/leagues";
 export const Route = createFileRoute("/$league/favorites")({
   head: ({ params }) => {
     const name = LEAGUES[params.league as LeagueId]?.name ?? "League";
-    const title = `My ${name} dashboard — Statline`;
-    const description = `A personal ${name} dashboard: latest stats, photos, form and upcoming games for the teams and players you follow.`;
+    const title = `Mijn ${name}-dashboard — Statline`;
+    const description = `Een persoonlijk ${name}-dashboard: cijfers, vorm en komende wedstrijden van de teams en spelers die je volgt.`;
     return {
       meta: [
         { title },

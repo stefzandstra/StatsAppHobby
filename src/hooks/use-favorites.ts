@@ -41,8 +41,10 @@ export function applyTeamTheme(color?: string | null, altColor?: string | null) 
     const c = color.replace("#", "");
     const a = (altColor || color).replace("#", "");
     style.textContent = `:root{--team:#${c};--team-accent:#${a}}`;
+    document.documentElement.setAttribute("data-team-theme", "");
   } else {
     style.textContent = "";
+    document.documentElement.removeAttribute("data-team-theme");
   }
 }
 

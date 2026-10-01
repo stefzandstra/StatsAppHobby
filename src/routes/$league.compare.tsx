@@ -3,11 +3,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { SectionTitle } from "@/components/nba/ui";
+import { SectionTitle, Skeleton } from "@/components/nba/ui";
 import { useFavorites } from "@/hooks/use-favorites";
 import { searchPlayers } from "@/lib/extras.functions";
 import { LEAGUES, type LeagueId } from "@/lib/leagues";
 import { getPlayerStats } from "@/lib/sports.functions";
+import { cn } from "@/lib/utils";
 
 const playerQuery = (league: LeagueId, id: string) =>
   queryOptions({
@@ -18,13 +19,13 @@ const playerQuery = (league: LeagueId, id: string) =>
 
 export const Route = createFileRoute("/$league/compare")({
   validateSearch: (s: Record<string, unknown>) => ({
-    a: s['a'] != null && s['a'] !== '' ? String(s['a']) : undefined,
-    b: s['b'] != null && s['b'] !== '' ? String(s['b']) : undefined,
+    a: s["a"] != null && s["a"] !== "" ? String(s["a"]) : undefined,
+    b: s["b"] != null && s["b"] !== "" ? String(s["b"]) : undefined,
   }),
   head: ({ params }) => {
     const n = LEAGUES[params.league as LeagueId]?.name ?? "League";
-    const title = `Compare ${n} players — Statline`;
-    const description = `Put two ${n} players side by side and compare their latest season stats.`;
+    const title = `${n}-spelers vergelijken — Statline`;
+    const description = `Zet twee ${n}-spelers naast elkaar en vergelijk hun laatste seizoen.`;
     return {
       meta: [
         { title },
@@ -59,18 +60,33 @@ function Compare() {
   const pb = b ? qb.data : undefined;
 
   // Categories both players have, compared on their latest season.
-  const shared = pa && pb
-    ? pa.categories
-        .map((ca) => ({ ca, cb: pb.categories.find((c) => c.name === ca.name) }))
-        .filter((x) => x.cb && x.ca.rows[0] && x.cb.rows[0])
-    : [];
+  const shared =
+    pa && pb
+      ? pa.categories
+          .map((ca) => ({ ca, cb: pb.categories.find((c) => c.name === ca.name) }))
+          .filter((x) => x.cb && x.ca.rows[0] && x.cb.rows[0])
+      : [];
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8">
-      <SectionTitle eyebrow="Head to head" title="Compare players" />
-      <div className="grid grid-cols-2 gap-3 sm:gap-6">
-        <Slot league={league} id={a} data={pa} loading={qa.isLoading && !!a} onPick={(id) => set("a", id)} side="left" />
-        <Slot league={league} id={b} data={pb} loading={qb.isLoading && !!b} onPick={(id) => set("b", id)} side="right" />
+    <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+      <SectionTitle as="h1" eyebrow="Head-to-head" title="Spelers vergelijken" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <Slot
+          league={league}
+          id={a}
+          data={pa}
+          loading={qa.isLoading && !!a}
+          onPick={(id) => set("a", id)}
+          side="left"
+        />
+        <Slot
+          league={league}
+          id={b}
+          data={pb}
+          loading={qb.isLoading && !!b}
+          onPick={(id) => set("b", id)}
+          side="right"
+        />
       </div>
 
       {pa && pb ? (
@@ -81,9 +97,9 @@ function Compare() {
               const rb = cb!.rows[0]!;
               return (
                 <div key={`${ca.name}-${si}`} className="surface animate-in fade-in p-4 sm:p-6">
-                  <div className="mb-4 flex items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                  <div className="mb-4 flex items-baseline justify-between gap-2 text-xs text-subtle-foreground">
                     <span>{ra.season}</span>
-                    <p className="eyebrow text-foreground">{ca.name}</p>
+                    <h2 className="eyebrow font-sans text-foreground">{ca.name}</h2>
                     <span>{rb.season}</span>
                   </div>
                   <div className="space-y-2.5">
@@ -94,24 +110,54 @@ function Compare() {
                       const vb = rb.stats[j];
                       const na = num(va);
                       const nb = num(vb);
-                      const total = (Math.abs(na ?? 0) + Math.abs(nb ?? 0)) || 1;
+                      const total = Math.abs(na ?? 0) + Math.abs(nb ?? 0) || 1;
                       const lowWins = LOWER_IS_BETTER.test(label);
-                      const aWins = na != null && nb != null && na !== nb && (lowWins ? na < nb : na > nb);
+                      const aWins =
+                        na != null && nb != null && na !== nb && (lowWins ? na < nb : na > nb);
                       const bWins = na != null && nb != null && na !== nb && !aWins;
                       return (
-                        <div key={`${label}-${i}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-sm">
+                        <div
+                          key={`${label}-${i}`}
+                          className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-sm"
+                        >
                           <div className="flex items-center justify-end gap-2">
-                            <span className={`stat-num ${aWins ? "font-bold text-foreground" : "text-muted-foreground"}`}>{va}</span>
-                            <div className="h-2 w-full max-w-40 overflow-hidden rounded-full bg-muted">
-                              <div className={`ml-auto h-full rounded-full transition-all duration-700 ${aWins ? "bg-team" : "bg-muted-foreground/40"}`} style={{ width: `${(Math.abs(na ?? 0) / total) * 100}%` }} />
+                            <span
+                              className={cn(
+                                "stat-num w-12 shrink-0 text-right",
+                                aWins ? "font-bold text-foreground" : "text-muted-foreground",
+                              )}
+                            >
+                              {va}
+                            </span>
+                            <div className="h-1.5 w-full max-w-40 overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={cn(
+                                  "ml-auto h-full rounded-full transition-all duration-700",
+                                  aWins ? "bg-brand" : "bg-border-strong",
+                                )}
+                                style={{ width: `${(Math.abs(na ?? 0) / total) * 100}%` }}
+                              />
                             </div>
                           </div>
                           <span className="eyebrow w-12 text-center">{label}</span>
                           <div className="flex items-center gap-2">
-                            <div className="h-2 w-full max-w-40 overflow-hidden rounded-full bg-muted">
-                              <div className={`h-full rounded-full transition-all duration-700 ${bWins ? "bg-team" : "bg-muted-foreground/40"}`} style={{ width: `${(Math.abs(nb ?? 0) / total) * 100}%` }} />
+                            <div className="h-1.5 w-full max-w-40 overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all duration-700",
+                                  bWins ? "bg-chart-2" : "bg-border-strong",
+                                )}
+                                style={{ width: `${(Math.abs(nb ?? 0) / total) * 100}%` }}
+                              />
                             </div>
-                            <span className={`stat-num ${bWins ? "font-bold text-foreground" : "text-muted-foreground"}`}>{vb}</span>
+                            <span
+                              className={cn(
+                                "stat-num w-12 shrink-0",
+                                bWins ? "font-bold text-foreground" : "text-muted-foreground",
+                              )}
+                            >
+                              {vb}
+                            </span>
                           </div>
                         </div>
                       );
@@ -123,11 +169,14 @@ function Compare() {
           </div>
         ) : (
           <p className="surface mt-8 p-6 text-center text-sm text-muted-foreground">
-            These two players don't share any stat categories — try players at similar positions.
+            Deze spelers hebben geen gedeelde statistiekcategorieën — kies spelers op vergelijkbare
+            posities.
           </p>
         )
       ) : (
-        <p className="mt-8 text-center text-sm text-muted-foreground">Pick two players to see them head to head.</p>
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          Kies twee spelers om ze naast elkaar te zetten.
+        </p>
       )}
     </main>
   );
@@ -136,7 +185,12 @@ function Compare() {
 type PlayerData = Awaited<ReturnType<typeof getPlayerStats>>;
 
 function Slot({
-  league, id, data, loading, onPick, side,
+  league,
+  id,
+  data,
+  loading,
+  onPick,
+  side,
 }: {
   league: LeagueId;
   id: string | undefined;
@@ -145,29 +199,49 @@ function Slot({
   onPick: (id: string | undefined) => void;
   side: "left" | "right";
 }) {
-  if (id && (loading || !data)) return <div className="surface h-64 animate-pulse" />;
+  if (id && (loading || !data)) return <Skeleton className="h-64" />;
   if (id && data) {
     const p = data.player;
     return (
-      <div className={`surface animate-in fade-in relative flex flex-col items-center p-4 text-center sm:p-6`}>
-        <button onClick={() => onPick(undefined)} aria-label="Change player" className="absolute right-2 top-2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+      <div
+        className={`surface animate-in fade-in relative flex flex-col items-center p-4 text-center sm:p-6`}
+      >
+        <button
+          type="button"
+          onClick={() => onPick(undefined)}
+          aria-label="Andere speler kiezen"
+          className="absolute right-1 top-1 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
+        >
           <X className="size-4" />
         </button>
         {p.headshot ? (
-          <img src={p.headshot} alt={p.name} className="size-24 rounded-full bg-muted object-cover ring-4 ring-team/30 sm:size-32" />
+          <img
+            src={p.headshot}
+            alt={p.name}
+            className={cn(
+              "size-24 rounded-full bg-secondary object-cover ring-2 sm:size-32",
+              side === "left" ? "ring-brand" : "ring-chart-2",
+            )}
+          />
         ) : (
-          <div className="size-24 rounded-full bg-muted sm:size-32" />
+          <div className="size-24 rounded-full bg-secondary sm:size-32" />
         )}
-        <Link to="/$league/player/$playerId" params={{ league, playerId: p.id }} className="mt-3 font-display text-lg font-bold uppercase leading-tight hover:underline sm:text-2xl">
+        <Link
+          to="/$league/player/$playerId"
+          params={{ league, playerId: p.id }}
+          className="mt-3 font-display text-lg font-bold uppercase leading-tight hover:underline sm:text-2xl"
+        >
           {p.name}
         </Link>
-        <p className="text-xs text-muted-foreground">{[p.teamName, p.position, p.jersey && `#${p.jersey}`].filter(Boolean).join(" · ")}</p>
+        <p className="text-xs text-subtle-foreground">
+          {[p.teamName, p.position, p.jersey && `#${p.jersey}`].filter(Boolean).join(" · ")}
+        </p>
         {data.highlights.length ? (
           <div className="mt-4 grid w-full grid-cols-3 gap-2">
             {data.highlights.slice(0, 3).map((h, hi) => (
-              <div key={`${h.label}-${hi}`} className="rounded-lg bg-muted/60 p-2">
-                <p className="stat-num text-lg font-bold">{h.value}</p>
+              <div key={`${h.label}-${hi}`} className="rounded-lg bg-secondary px-1 py-2">
                 <p className="eyebrow">{h.label}</p>
+                <p className="stat-num font-display text-2xl font-bold leading-none">{h.value}</p>
               </div>
             ))}
           </div>
@@ -178,7 +252,14 @@ function Slot({
   return <Picker league={league} onPick={onPick} side={side} />;
 }
 
-function Picker({ league, onPick }: { league: LeagueId; onPick: (id: string) => void; side: string }) {
+function Picker({
+  league,
+  onPick,
+}: {
+  league: LeagueId;
+  onPick: (id: string) => void;
+  side: string;
+}) {
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
   const { players } = useFavorites(league);
@@ -196,22 +277,37 @@ function Picker({ league, onPick }: { league: LeagueId; onPick: (id: string) => 
 
   return (
     <div className="surface flex min-h-64 flex-col p-4">
-      <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 focus-within:ring-2 focus-within:ring-team/40">
+      <label className="flex min-h-11 items-center gap-2 rounded-full bg-secondary px-4 focus-within:outline-2 focus-within:outline-ring">
         <Search className="size-4 text-muted-foreground" />
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search a player…"
-          className="w-full bg-transparent text-sm outline-none"
+          placeholder="Zoek een speler…"
+          aria-label="Zoek een speler"
+          className="w-full bg-transparent text-base outline-none placeholder:text-subtle-foreground sm:text-sm"
         />
       </label>
-      <p className="eyebrow mb-1 mt-3">{debounced.length >= 2 ? (isFetching ? "Searching…" : "Results") : "Your favorites"}</p>
+      <p className="eyebrow mb-1 mt-3">
+        {debounced.length >= 2 ? (isFetching ? "Zoeken…" : "Resultaten") : "Je favorieten"}
+      </p>
       {list.length ? (
         <ul className="space-y-1">
           {list.map((p) => (
             <li key={p.id}>
-              <button onClick={() => onPick(p.id)} className="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-sm hover:bg-muted">
-                {p.headshot ? <img src={p.headshot} alt="" className="size-7 rounded-full bg-muted object-cover" /> : <span className="size-7 rounded-full bg-muted" />}
+              <button
+                type="button"
+                onClick={() => onPick(p.id)}
+                className="flex min-h-11 w-full items-center gap-2 rounded-lg px-2 text-left text-sm hover:bg-secondary"
+              >
+                {p.headshot ? (
+                  <img
+                    src={p.headshot}
+                    alt=""
+                    className="size-8 rounded-full bg-secondary object-cover"
+                  />
+                ) : (
+                  <span className="size-8 rounded-full bg-secondary" />
+                )}
                 <span className="truncate">{p.name}</span>
               </button>
             </li>
@@ -219,7 +315,9 @@ function Picker({ league, onPick }: { league: LeagueId; onPick: (id: string) => 
         </ul>
       ) : (
         <p className="text-sm text-muted-foreground">
-          {debounced.length >= 2 ? "No players found." : "Search above, or favorite players to see them here."}
+          {debounced.length >= 2
+            ? "Geen spelers gevonden."
+            : "Zoek hierboven, of markeer spelers als favoriet om ze hier te zien."}
         </p>
       )}
     </div>
